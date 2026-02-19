@@ -1,5 +1,3 @@
-import "./styles.css";
-
 /**
  * SHIELD Demo (Steps 2–5 combined)
  * - Salvo generator: missiles → MIRVs (real warheads) → decoys-as-objects
