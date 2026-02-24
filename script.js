@@ -1,12 +1,5 @@
 /**
  * SHIELD Demo (Steps 2–5 combined)
- * - Salvo generator: missiles → MIRVs (real warheads) → decoys-as-objects
- * - Detection+tracking (compressed)
- * - Classification/discrimination (compressed): engage ONLY tracks classified as "warhead"
- * - Doctrine: Barrage vs Shoot-Look-Shoot (SLS) with re-engagement feasibility gate
- * - Trial-level common-mode failure / reliability (pSystemUp + degradation multipliers)
- * - Optional different Pk vs true warheads vs true decoys
- * - Outputs: penetrated REAL warheads + diagnostics + lightweight histograms
  *
  * Not implemented yet: boost availability, ASAT, explicit sensor/engagement capacity saturation,
  * site geometry, time-to-go, discrimination-by-sensor physics. This is an intuition model.
