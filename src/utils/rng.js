@@ -1,13 +1,35 @@
 /**
  * Random number generation and statistical utilities.
+ *
+ * Uses a seeded mulberry32 PRNG for reproducibility.
+ * Call seed(n) before a simulation run to get deterministic results.
  */
+
+let _state = 0;
+
+/**
+ * Seed the PRNG. Pass null or undefined to auto-seed from Date.now().
+ */
+export function seed(s) {
+  _state = (s != null ? s : Date.now()) >>> 0;
+}
+
+// Auto-seed on module load
+seed(null);
 
 export function clamp01(x) {
   return Math.max(0, Math.min(1, x));
 }
 
+/**
+ * Mulberry32 PRNG — returns a float in [0, 1).
+ */
 export function randUniform() {
-  return Math.random();
+  _state |= 0;
+  _state = (_state + 0x6D2B79F5) | 0;
+  let t = Math.imul(_state ^ (_state >>> 15), 1 | _state);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
 
 export function bernoulli(p) {

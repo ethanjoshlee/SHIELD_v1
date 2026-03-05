@@ -95,6 +95,11 @@ export function renderAppHTML() {
       </label>
 
       <label>
+        Seed (blank = random)
+        <input id="seed" type="number" step="1" value="" placeholder="auto" />
+      </label>
+
+      <label>
         System reliability: P(system up) (0\u20131)
         <input id="pSystemUp" type="number" min="0" max="1" step="0.01" value="${d.pSystemUp}" />
       </label>
@@ -216,6 +221,9 @@ export function readParamsFromUI() {
     parseFloat(document.getElementById("pkDegradeFactor").value) || 0
   );
 
+  const seedVal = document.getElementById("seed").value.trim();
+  const seed = seedVal === "" ? null : parseInt(seedVal, 10) || 0;
+
   return {
     nMissiles,
     mirvsPerMissile,
@@ -234,5 +242,6 @@ export function readParamsFromUI() {
     pSystemUp,
     detectDegradeFactor,
     pkDegradeFactor,
+    seed,
   };
 }
