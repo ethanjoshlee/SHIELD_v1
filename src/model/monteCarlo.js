@@ -2,6 +2,7 @@
  * Monte Carlo simulation runner — batches trials and collects distributions.
  */
 
+import { seed } from '../utils/rng.js';
 import { runOneTrial } from './simulationEngine.js';
 import { computeSummary } from './metrics.js';
 
@@ -9,6 +10,9 @@ import { computeSummary } from './metrics.js';
  * Run Monte Carlo and summarize distributions.
  */
 export function runMonteCarlo(params) {
+  // Seed PRNG for reproducibility (null → auto-seed from Date.now())
+  seed(params.seed);
+
   const { nTrials } = params;
 
   const penReal = [];
@@ -28,7 +32,15 @@ export function runMonteCarlo(params) {
   const invLeft = [];
   const systemUpFlags = [];
 
+  // Multi-phase arrays
+  const boostMissilesKilled = [];
+  const boostWarheadsDestroyed = [];
+  const midcourseWarheadsKilled = [];
+  const terminalWarheadsKilled = [];
+  const ktDelivered = [];
+
   let realWarheadsConst = null;
+  let totalMissiles = null;
 
   for (let t = 0; t < nTrials; t++) {
     const r = runOneTrial(params);
@@ -50,11 +62,27 @@ export function runMonteCarlo(params) {
 
     invLeft.push(r.inventoryRemaining);
     systemUpFlags.push(r.systemUp ? 1 : 0);
+
+    boostMissilesKilled.push(r.boostMissilesKilled);
+    boostWarheadsDestroyed.push(r.boostWarheadsDestroyed);
+    midcourseWarheadsKilled.push(r.midcourseWarheadsKilled);
+    terminalWarheadsKilled.push(r.terminalWarheadsKilled);
+    ktDelivered.push(r.ktDelivered);
   }
 
   const summary = computeSummary(
-    { penReal, intReal, detObj, detReal, tp, fn, fp, shotsTot, shotsW, shotsD, invLeft, systemUpFlags },
-    realWarheadsConst
+    {
+      penReal, intReal,
+      detObj, detReal,
+      tp, fn, fp,
+      shotsTot, shotsW, shotsD,
+      invLeft, systemUpFlags,
+      boostMissilesKilled, boostWarheadsDestroyed,
+      midcourseWarheadsKilled, terminalWarheadsKilled,
+      ktDelivered,
+    },
+    realWarheadsConst,
+    params
   );
 
   return {
@@ -62,6 +90,7 @@ export function runMonteCarlo(params) {
     intReal,
     shotsTot,
     fp,
+    ktDelivered,
     summary,
   };
 }

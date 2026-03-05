@@ -21,7 +21,7 @@ export function renderSummary(params, result) {
 
   const sanity = s.meanPenReal + s.meanIntReal;
 
-  return [
+  const lines = [
     `Inputs:`,
     `  Missiles:                           ${params.nMissiles}`,
     `  MIRVs per missile:                  ${params.mirvsPerMissile}`,
@@ -60,6 +60,40 @@ export function renderSummary(params, result) {
       0
     )} / ${s.medianPenReal.toFixed(0)} / ${s.p90PenReal.toFixed(0)}`,
     `  Mean intercepted real warheads:     ${fmt(s.meanIntReal, 2)}`,
+  ];
+
+  // --- Per-phase breakdown (multi-phase mode only) ---
+  if (s.meanBoostMissilesKilled != null) {
+    lines.push(
+      ``,
+      `Per-phase breakdown (means):`,
+      `  Boost:     missiles killed:         ${fmt(s.meanBoostMissilesKilled, 2)}`,
+      `             warheads destroyed:      ${fmt(s.meanBoostWarheadsDestroyed, 2)}`,
+      `  Midcourse: warheads killed:         ${fmt(s.meanMidcourseWarheadsKilled, 2)}`,
+      `  Terminal:  warheads killed:          ${fmt(s.meanTerminalWarheadsKilled, 2)}`,
+    );
+  }
+
+  // --- Kiloton delivery stats ---
+  if (s.meanKtDelivered != null) {
+    lines.push(
+      ``,
+      `Yield delivered:`,
+      `  Mean kilotons delivered:            ${fmt(s.meanKtDelivered, 1)} kt`,
+      `  Delivered p10/median/p90:           ${fmt(s.p10KtDelivered, 0)} / ${fmt(s.medianKtDelivered, 0)} / ${fmt(s.p90KtDelivered, 0)} kt`,
+    );
+  }
+
+  // --- Architecture cost ---
+  if (s.architectureCost_M > 0) {
+    lines.push(
+      ``,
+      `Architecture cost:`,
+      `  Total interceptor cost:             $${fmt(s.architectureCost_B, 2)}B ($${fmt(s.architectureCost_M, 0)}M)`,
+    );
+  }
+
+  lines.push(
     ``,
     `Detection diagnostics:`,
     `  Mean detected objects (all):        ${fmt(
@@ -87,5 +121,7 @@ export function renderSummary(params, result) {
       sanity,
       2
     )} (should be close to real warheads = ${realWarheads})`,
-  ].join("\n");
+  );
+
+  return lines.join("\n");
 }

@@ -1,44 +1,32 @@
 /**
- * Classification (Step 3) and Engagement (Step 4)
+ * Classification and Engagement logic.
+ *
+ * Supports both legacy (single interceptor type) and multi-type engagement.
  */
 
 import { bernoulli } from '../utils/rng.js';
 
 /**
  * Classify a detected object as "warhead track" or "not warhead track".
- * This is a compressed model of discrimination / track classification.
- *
  * @returns {boolean} classifiedAsWarhead
  */
 export function classifyTarget(tgt, params) {
   const { pClassifyWarhead, pFalseAlarmDecoy } = params;
-  if (tgt.kind === "warhead") return bernoulli(pClassifyWarhead); // true positive rate
-  return bernoulli(pFalseAlarmDecoy); // false positive rate
+  if (tgt.kind === "warhead") return bernoulli(pClassifyWarhead);
+  return bernoulli(pFalseAlarmDecoy);
 }
 
 /**
- * Engage an object given doctrine and finite inventory.
- * The defense engages ONLY objects classified as warhead (enforced outside this function).
+ * Engage a single target with a specific interceptor type's Pk and inventory.
  *
- * - Barrage: allocate up to shotsPerTarget immediately (subject to remaining inventory)
- * - SLS: fire sequentially up to maxShotsPerTarget, but after each miss, the next shot
- *        only happens if bernoulli(pReengage) is true.
- *
- * Uses pkWarhead vs pkDecoy based on the TRUE target type (simplification).
- *
- * @returns {Object} { killed, shotsFired, inventoryRemaining }
+ * @param {Object} tgt — target object ({kind, id, ...})
+ * @param {number} pk — probability of kill per shot for this interceptor type
+ * @param {Object} doctrineParams — { doctrineMode, shotsPerTarget, maxShotsPerTarget, pReengage }
+ * @param {number} inventory — remaining interceptors of this type
+ * @returns {{ killed: boolean, shotsFired: number, inventoryRemaining: number }}
  */
-export function engageTarget(tgt, params, inventory) {
-  const {
-    doctrineMode,
-    shotsPerTarget,
-    maxShotsPerTarget,
-    pReengage,
-    pkWarhead,
-    pkDecoy,
-  } = params;
-
-  const pk = tgt.kind === "warhead" ? pkWarhead : pkDecoy;
+export function engageWithType(tgt, pk, doctrineParams, inventory) {
+  const { doctrineMode, shotsPerTarget, maxShotsPerTarget, pReengage } = doctrineParams;
 
   if (inventory <= 0) {
     return { killed: false, shotsFired: 0, inventoryRemaining: inventory };
@@ -70,21 +58,15 @@ export function engageTarget(tgt, params, inventory) {
   let shotsFired = 0;
 
   for (let s = 0; s < cap; s++) {
-    // Fire one shot
     shotsFired += 1;
-    const hit = bernoulli(pk);
-    if (hit) {
+    if (bernoulli(pk)) {
       return {
         killed: true,
         shotsFired,
         inventoryRemaining: inventory - shotsFired,
       };
     }
-
-    // Miss: decide whether re-engagement is feasible for next shot
-    // (geometry/time-to-go proxy)
-    const canReengage = bernoulli(pReengage);
-    if (!canReengage) break;
+    if (!bernoulli(pReengage)) break;
   }
 
   return {
@@ -92,4 +74,13 @@ export function engageTarget(tgt, params, inventory) {
     shotsFired,
     inventoryRemaining: inventory - shotsFired,
   };
+}
+
+/**
+ * Legacy engageTarget — wraps engageWithType using the old single-Pk interface.
+ * Kept for backward compatibility.
+ */
+export function engageTarget(tgt, params, inventory) {
+  const pk = tgt.kind === "warhead" ? params.pkWarhead : params.pkDecoy;
+  return engageWithType(tgt, pk, params, inventory);
 }
